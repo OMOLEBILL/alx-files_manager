@@ -3,7 +3,7 @@ import { MongoClient } from 'mongodb';
 class DBClient {
   constructor() {
     const host = process.env.DB_HOST == null ? 'localhost' : process.env.DB_HOST;
-    const port = process.env.DB_PORT == null ?  27017 : process.env.DB_PORT;
+    const port = process.env.DB_PORT == null ? 27017 : process.env.DB_PORT;
     const database = process.env.DB_DATABASE == null ? 'files_manager' : process.env.DB_DATABASE;
     const url = `mongodb://${host}:${port}`;
     this.client = new MongoClient(url, { useUnifiedTopology: true });
@@ -16,8 +16,8 @@ class DBClient {
 
   isAlive() {
     const status = this.client.topology.s.state;
-    if (status === 'connected') { 
-      return true; 
+    if (status === 'connected') {
+      return true;
     }
     return false;
   }
