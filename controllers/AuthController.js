@@ -1,5 +1,6 @@
 import crypto from 'crypto';
 import { v4 as uuidv4 } from 'uuid';
+import { ObjectID } from 'mongodb';
 import dbClient from '../utils/db';
 import redisClient from '../utils/redis';
 
@@ -31,7 +32,11 @@ export default class AuthController {
     const token = request.get('X-Token');
     const key = `auth_${token}`;
     const userId = await redisClient.get(key);
-    if (userId) {
+    const { db } = dbClient;
+    const users = db.collection('users');
+    const query = { _id: new ObjectID(userId) };
+    const user = await users.findOne(query);
+    if (user) {
       await redisClient.del(key);
       response.status(204);
       response.end();
