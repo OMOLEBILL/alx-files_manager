@@ -92,4 +92,96 @@ export default class FilesController {
       response.status(401).json({ error: 'Unauthorized' });
     }
   }
+
+  static async getShow(request, response) {
+    const token = request.get('X-Token');
+    const key = `auth_${token}`;
+    const userId = await redisClient.get(key);
+    const { db } = dbClient;
+    const users = db.collection('users');
+    const query = { _id: new ObjectID(userId) };
+    const user = await users.findOne(query);
+    const files = db.collection('files');
+    if (user) {
+      const fileId = request.params.id;
+      const fileQuery = { _id: new ObjectID(fileId), userId: new ObjectID(userId) };
+      const file = await files.findOne(fileQuery);
+      if (file) {
+        const returnFile = {
+          id: file._id,
+          userId: file.userId,
+          name: file.name,
+          type: file.type,
+          isPublic: file.isPublic,
+          parentId: file.parentId,
+        };
+        response.json(returnFile);
+      } else {
+        response.status(404).json({ error: 'Not found' });
+      }
+    } else {
+      response.status(401).json({ error: 'Unauthorized' });
+    }
+  }
+
+  static async getIndex(request, response) {
+    const token = request.get('X-Token');
+    const key = `auth_${token}`;
+    const userId = await redisClient.get(key);
+    const { db } = dbClient;
+    const users = db.collection('users');
+    const query = { _id: new ObjectID(userId) };
+    const user = await users.findOne(query);
+    const files = db.collection('files');
+    const docArray = [];
+    if (user) {
+      const parentId = request.param('parentId');
+      const page = request.param('page');
+      const maxItems = 20;
+      const lowerlimit = page * maxItems;
+      if (Number(parentId) !== 0) {
+        const folderQuery = { _id: new ObjectID(parentId), userId: user._id };
+        const folder = await files.findOne(folderQuery);
+        if (folder) {
+          const pipeLine = [
+            { $match: { parentId: new ObjectID(parentId), userId: user._id } },
+            { $skip: lowerlimit },
+            { $limit: maxItems },
+          ];
+          const agg = files.aggregate(pipeLine);
+          await agg.forEach((doc) => {
+            const finaldocument = {
+              id: doc._id,
+              userId: doc.userId,
+              name: doc.name,
+              type: doc.type,
+              isPublic: doc.isPublic,
+              parentId: doc.parentId,
+            };
+            docArray.push(finaldocument);
+          });
+          response.json(docArray);
+        // } else {
+        //   response.json(docArray);
+        // }
+        } else {
+          const userAlldoc = await files.find({ userId: user._Id });
+          await userAlldoc.forEach((doc) => {
+            const finaldocument = {
+              id: doc._id,
+              userId: doc.userId,
+              name: doc.name,
+              type: doc.type,
+              isPublic: doc.isPublic,
+              parentId: doc.parentId,
+            };
+            docArray.push(finaldocument);
+          });
+          response.json(docArray);
+        }
+      } else {
+        response.status(401).json({ error: 'Unauthorized' });
+      }
+    }
+  }
 }
