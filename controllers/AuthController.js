@@ -33,7 +33,8 @@ export default class AuthController {
     const userId = await redisClient.get(key);
     if (userId) {
       await redisClient.del(key);
-      response.status(204).send();
+      response.status(204);
+      response.end();
     } else {
       response.status(401).json({ error: 'Unauthorized' });
     }

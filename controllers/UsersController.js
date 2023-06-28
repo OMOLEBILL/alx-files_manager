@@ -49,7 +49,7 @@ export default class UsersController {
     const query = { _id: new ObjectID(userId) };
     const user = await users.findOne(query);
     if (user) {
-      response.json({ id: user._id, email: user.email });
+      response.status(200).json({ id: user._id, email: user.email });
     } else {
       response.status(401).json({ error: 'Unauthorized' });
     }
