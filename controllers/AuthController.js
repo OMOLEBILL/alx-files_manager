@@ -15,9 +15,9 @@ export default class AuthController {
       const passwordHash = crypto.createHash('sha1').update(creds[1]).digest('hex');
       const { db } = dbClient;
       const users = db.collection('users');
-      const query = { email: creds[0] };
+      const query = { email: creds[0], password: passwordHash };
       const user = await users.findOne(query);
-      if ((user) && (user.password === passwordHash)) {
+      if (user) {
         const authToken = uuidv4();
         const key = `auth_${authToken}`;
         await redisClient.set(key, user._id, keyDuration);
