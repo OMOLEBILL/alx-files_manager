@@ -11,26 +11,26 @@ export default class UsersController {
       userPassword = data.password;
     }
     if (!userEmail) {
-      response.status(400).json({error :'Missing email'});
+      response.status(400).json({ error: 'Missing email' });
       response.end();
     }
     if (!userPassword) {
-      response.status(400).json({error: 'Missing password'});
+      response.status(400).json({ error: 'Missing password' });
       response.end();
     }
-    const db = dbClient.db;
+    const { db } = dbClient;
     const users = db.collection('users');
-    const query = {'email': userEmail};
-    if ( userEmail && userPassword) {
+    const query = { email: userEmail };
+    if (userEmail && userPassword) {
       try {
-        const user = await users.findOne(query); 
+        const user = await users.findOne(query);
         if (!user) {
           const passwordHash = crypto.createHash('sha1').update(userPassword).digest('hex');
-          const user = {email: userEmail, password: passwordHash};
+          const user = { email: userEmail, password: passwordHash };
           const result = await users.insertOne(user);
-          response.status(201).json({'id': result.insertedId, email: userEmail});
+          response.status(201).json({ id: result.insertedId, email: userEmail });
         } else {
-          response.status(400).json({error: 'Already exist'});
+          response.status(400).json({ error: 'Already exist' });
         }
       } catch (error) {
         console.error(error);
