@@ -22,8 +22,10 @@ export default class AuthController {
         const key = `auth_${authToken}`;
         await redisClient.set(key, user._id, keyDuration);
         response.status(200).json({ token: authToken });
+        return;
       } else {
         response.status(401).json({ error: 'Unauthorized' });
+        return;
       }
     }
   }
@@ -40,8 +42,10 @@ export default class AuthController {
       await redisClient.del(key);
       response.status(204);
       response.end();
+      return;
     } else {
       response.status(401).json({ error: 'Unauthorized' });
+      return;
     }
   }
 }
