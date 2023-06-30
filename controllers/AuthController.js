@@ -11,12 +11,17 @@ export default class AuthController {
     if (authHeader) {
       const base64str = authHeader.split(' ')[1];
       let creds = '';
-      const patttern = /^([A-Za-z0-9+/]{4})*([A-Za-z0-9+/]{3}=|[A-Za-z0-9+/]{2}==)?$/;
-      const base64 = base64str.match(patttern) ? 'Base64' : 'Not Base64';
+      const pattern = /^([A-Za-z0-9+/]{4})*([A-Za-z0-9+/]{3}=|[A-Za-z0-9+/]{2}==)?$/;
+      const base64 = base64str.match(pattern) ? 'Base64' : 'Not Base64';
+      console.log(base64);
       if (base64 === 'Base64') {
         const decodedstr = global.atob(base64str);
         creds = decodedstr.split(':');
       } else {
+        response.status(401).json({ error: 'Unauthorized' });
+        return;
+      }
+      if (creds.length != 2){
         response.status(401).json({ error: 'Unauthorized' });
         return;
       }
