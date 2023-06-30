@@ -21,7 +21,7 @@ export default class AuthController {
         response.status(401).json({ error: 'Unauthorized' });
         return;
       }
-      if (creds.length != 2){
+      if (creds.length !== 2) {
         response.status(401).json({ error: 'Unauthorized' });
         return;
       }
