@@ -106,7 +106,7 @@ export default class FilesController {
       const fileId = request.params.id;
       const fileQuery = { _id: new ObjectID(fileId), userId: new ObjectID(userId) };
       const file = await files.findOne(fileQuery);
-      if (file) {
+      if (file != null) {
         const returnFile = {
           id: file._id,
           userId: file.userId,
@@ -135,16 +135,20 @@ export default class FilesController {
     const files = db.collection('files');
     const docArray = [];
     if (user) {
-      const parentId = request.param('parentId');
-      const page = request.param('page');
+      const queryParams = request.query;
+      const { parentId = 0, page = 0 } = queryParams;
       const maxItems = 20;
-      const lowerlimit = page * maxItems;
-      if (Number(parentId) !== 0) {
-        const folderQuery = { _id: new ObjectID(parentId), userId: user._id };
+      let lowerlimit = 0;
+      if (typeof (page) === 'string' || page === 0) {
+        lowerlimit = Number(page) * maxItems;
+      }
+      if (parentId != null && (parentId === 0 || typeof (parentId) === 'string')) {
+        const folderQuery = { _id: new ObjectID(parentId), userId: new ObjectID(user._id) };
         const folder = await files.findOne(folderQuery);
-        if (folder) {
+        if (folder != null) {
+          const query = { parentId, userId: new ObjectID(user._id) };
           const pipeLine = [
-            { $match: { parentId: new ObjectID(parentId), userId: user._id } },
+            { $match: query },
             { $skip: lowerlimit },
             { $limit: maxItems },
           ];
@@ -160,14 +164,18 @@ export default class FilesController {
             };
             docArray.push(finaldocument);
           });
+
           response.json(docArray);
-        // } else {
-        //   response.json(docArray);
-        // }
         } else {
-          const userAlldoc = await files.find({ userId: user._Id });
-          await userAlldoc.forEach((doc) => {
-            const finaldocument = {
+          const query = { userId: new ObjectID(user._id) };
+          const pipeLine = [
+            { $match: query },
+            { $skip: lowerlimit },
+            { $limit: maxItems },
+          ];
+          const agg = files.aggregate(pipeLine);
+          await agg.forEach((doc) => {
+            const finalDocument = {
               id: doc._id,
               userId: doc.userId,
               name: doc.name,
@@ -175,7 +183,7 @@ export default class FilesController {
               isPublic: doc.isPublic,
               parentId: doc.parentId,
             };
-            docArray.push(finaldocument);
+            docArray.push(finalDocument);
           });
           response.json(docArray);
         }
