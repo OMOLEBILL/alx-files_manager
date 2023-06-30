@@ -27,6 +27,10 @@ export default class AuthController {
       // }
       const decodedstr = Buffer.from(base64str, 'base64').toString('binary');
       const creds = decodedstr.split(':');
+      if (creds.length !== 2) {
+        response.status(401).json({ error: 'Unauthorized' });
+        return;
+      }
       const passwordHash = crypto.createHash('sha1').update(creds[1]).digest('hex');
       const { db } = dbClient;
       const users = db.collection('users');
