@@ -10,21 +10,23 @@ export default class AuthController {
     const authHeader = request.get('Authorization');
     if (authHeader) {
       const base64str = authHeader.split(' ')[1];
-      let creds = '';
-      const pattern = /^([A-Za-z0-9+/]{4})*([A-Za-z0-9+/]{3}=|[A-Za-z0-9+/]{2}==)?$/;
-      const base64 = base64str.match(pattern) ? 'Base64' : 'Not Base64';
-      console.log(base64);
-      if (base64 === 'Base64') {
-        const decodedstr = global.atob(base64str);
-        creds = decodedstr.split(':');
-      } else {
-        response.status(401).json({ error: 'Unauthorized' });
-        return;
-      }
-      if (creds.length !== 2) {
-        response.status(401).json({ error: 'Unauthorized' });
-        return;
-      }
+      // let creds = '';
+      // const pattern = /^([A-Za-z0-9+/]{4})*([A-Za-z0-9+/]{3}=|[A-Za-z0-9+/]{2}==)?$/;
+      // const base64 = base64str.match(pattern) ? 'Base64' : 'Not Base64';
+      // console.log(base64);
+      // if (base64 === 'Base64') {
+      //   const decodedstr = global.atob(base64str);
+      //   creds = decodedstr.split(':');
+      // } else {
+      //   response.status(401).json({ error: 'Unauthorized' });
+      //   return;
+      // }
+      // if (creds.length !== 2) {
+      //   response.status(401).json({ error: 'Unauthorized' });
+      //   return;
+      // }
+      const decodedstr = Buffer.from(base64str, 'base64').toString('binary');
+      const creds = decodedstr.split(':');
       const passwordHash = crypto.createHash('sha1').update(creds[1]).digest('hex');
       const { db } = dbClient;
       const users = db.collection('users');
