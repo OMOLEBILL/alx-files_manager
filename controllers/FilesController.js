@@ -195,4 +195,84 @@ export default class FilesController {
       response.status(401).json({ error: 'Unauthorized' });
     }
   }
+
+  static async putPublish(request, response) {
+    const token = request.get('X-Token');
+    const key = `auth_${token}`;
+    const userId = await redisClient.get(key);
+    const { db } = dbClient;
+    const users = db.collection('users');
+    const query = { _id: new ObjectID(userId) };
+    const user = await users.findOne(query);
+    const files = db.collection('files');
+    if (user !== null) {
+      const fileId = request.params.id;
+      const fileQuery = { _id: new ObjectID(fileId), userId: new ObjectID(user._id) };
+      const file = await files.findOne(fileQuery);
+      if (file !== null) {
+        const update = {
+          $set: {
+            isPublic: true,
+          },
+        };
+        const result = await files.findOneAndUpdate(fileQuery, update);
+        const updatedDoc = result.value;
+        if (updatedDoc !== null) {
+          const finalDocument = {
+            id: updatedDoc._id,
+            userId: updatedDoc.userId,
+            name: updatedDoc.name,
+            type: updatedDoc.type,
+            isPublic: updatedDoc.isPublic,
+            parentId: updatedDoc.parentId,
+          };
+          response.status(200).json(finalDocument);
+        }
+      } else {
+        response.status(404).json({ error: 'Not found' });
+      }
+    } else {
+      response.status(401).json({ error: 'Unauthorized' });
+    }
+  }
+
+  static async putUnpublish(request, response) {
+    const token = request.get('X-Token');
+    const key = `auth_${token}`;
+    const userId = await redisClient.get(key);
+    const { db } = dbClient;
+    const users = db.collection('users');
+    const query = { _id: new ObjectID(userId) };
+    const user = await users.findOne(query);
+    const files = db.collection('files');
+    if (user !== null) {
+      const fileId = request.params.id;
+      const fileQuery = { _id: new ObjectID(fileId), userId: new ObjectID(user._id) };
+      const file = await files.findOne(fileQuery);
+      if (file !== null) {
+        const update = {
+          $set: {
+            isPublic: false,
+          },
+        };
+        const result = await files.findOneAndUpdate(fileQuery, update);
+        const updatedDoc = result.value;
+        if (updatedDoc !== null) {
+          const finalDocument = {
+            id: updatedDoc._id,
+            userId: updatedDoc.userId,
+            name: updatedDoc.name,
+            type: updatedDoc.type,
+            isPublic: updatedDoc.isPublic,
+            parentId: updatedDoc.parentId,
+          };
+          response.status(200).json(finalDocument);
+        }
+      } else {
+        response.status(404).json({ error: 'Not found' });
+      }
+    } else {
+      response.status(401).json({ error: 'Unauthorized' });
+    }
+  }
 }
