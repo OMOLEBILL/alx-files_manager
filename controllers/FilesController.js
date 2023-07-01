@@ -102,7 +102,7 @@ export default class FilesController {
     const query = { _id: new ObjectID(userId) };
     const user = await users.findOne(query);
     const files = db.collection('files');
-    if (user) {
+    if (user !== null) {
       const fileId = request.params.id;
       const fileQuery = { _id: new ObjectID(fileId), userId: new ObjectID(userId) };
       const file = await files.findOne(fileQuery);
@@ -134,7 +134,7 @@ export default class FilesController {
     const user = await users.findOne(query);
     const files = db.collection('files');
     const docArray = [];
-    if (user) {
+    if (user !== null) {
       const queryParams = request.query;
       const { parentId = 0, page = 0 } = queryParams;
       const maxItems = 20;
@@ -142,11 +142,11 @@ export default class FilesController {
       if (typeof (page) === 'string' || page === 0) {
         lowerlimit = Number(page) * maxItems;
       }
-      if (parentId != null && (parentId === 0 || typeof (parentId) === 'string')) {
+      if (typeof (parentId) === 'string') {
         const folderQuery = { _id: new ObjectID(parentId), userId: new ObjectID(user._id) };
         const folder = await files.findOne(folderQuery);
         if (folder != null) {
-          const query = { parentId, userId: new ObjectID(user._id) };
+          const query = { parentId: new ObjectID(parentId), userId: new ObjectID(user._id) };
           const pipeLine = [
             { $match: query },
             { $skip: lowerlimit },
@@ -167,29 +167,32 @@ export default class FilesController {
 
           response.json(docArray);
         } else {
-          const query = { userId: new ObjectID(user._id) };
-          const pipeLine = [
-            { $match: query },
-            { $skip: lowerlimit },
-            { $limit: maxItems },
-          ];
-          const agg = files.aggregate(pipeLine);
-          await agg.forEach((doc) => {
-            const finalDocument = {
-              id: doc._id,
-              userId: doc.userId,
-              name: doc.name,
-              type: doc.type,
-              isPublic: doc.isPublic,
-              parentId: doc.parentId,
-            };
-            docArray.push(finalDocument);
-          });
           response.json(docArray);
         }
-      } else {
-        response.status(401).json({ error: 'Unauthorized' });
+      } else if (parentId === 0) {
+        const query = { userId: new ObjectID(user._id) };
+        const pipeLine = [
+          { $match: query },
+          { $skip: lowerlimit },
+          { $limit: maxItems },
+        ];
+        const agg = files.aggregate(pipeLine);
+        await agg.forEach((doc) => {
+          const finalDocument = {
+            id: doc._id,
+            userId: doc.userId,
+            name: doc.name,
+            type: doc.type,
+            isPublic: doc.isPublic,
+            parentId: doc.parentId,
+          };
+          console.log(finalDocument);
+          docArray.push(finalDocument);
+        });
+        response.json(docArray);
       }
+    } else {
+      response.status(401).json({ error: 'Unauthorized' });
     }
   }
 }
