@@ -215,7 +215,8 @@ export default class FilesController {
             isPublic: true,
           },
         };
-        const result = await files.findOneAndUpdate(fileQuery, update);
+        const options = { returnDocument: 'after' };
+        const result = await files.findOneAndUpdate(fileQuery, update, options);
         const updatedDoc = result.value;
         if (updatedDoc !== null) {
           const finalDocument = {
@@ -255,7 +256,8 @@ export default class FilesController {
             isPublic: false,
           },
         };
-        const result = await files.findOneAndUpdate(fileQuery, update);
+        const options = { returnDocument: 'after' };
+        const result = await files.findOneAndUpdate(fileQuery, update, options);
         const updatedDoc = result.value;
         if (updatedDoc !== null) {
           const finalDocument = {
