@@ -1,6 +1,7 @@
 import { ObjectID } from 'mongodb';
 import fs from 'fs';
 import { v4 as uuidv4 } from 'uuid';
+import mime from 'mime-types';
 import redisClient from '../utils/redis';
 import dbClient from '../utils/db';
 
@@ -275,6 +276,63 @@ export default class FilesController {
       }
     } else {
       response.status(401).json({ error: 'Unauthorized' });
+    }
+  }
+
+  static async getFile(request, response) {
+    const token = request.get('X-Token');
+    const key = `auth_${token}`;
+    const userId = await redisClient.get(key);
+    const { db } = dbClient;
+    const users = db.collection('users');
+    const userQuery = { _id: new ObjectID(userId) };
+    const user = await users.findOne(userQuery);
+    const files = db.collection('files');
+    const fileId = request.params.id;
+    const fileQuery = { _id: new ObjectID(fileId) };
+    const file = await files.findOne(fileQuery);
+    if (file !== null) {
+      if (file.isPublic) {
+        if (file.type === 'folder') {
+          response.status(400).json({ error: 'A folder doesn\'t have content' });
+          return;
+        }
+        fs.readFile(file.localPath, (err, data) => {
+          if (err) {
+            response.status(404).json({ error: 'Not found' });
+            return;
+          }
+          const fileType = mime.lookup(file.name);
+          if (fileType) {
+            response.setHeader('Content-Type', fileType);
+            response.writeHead(200);
+            response.write(data);
+            response.end();
+          }
+        });
+      } else if (user == null) {
+        response.status(404).json({ error: 'Not found' });
+      } else {
+        if (file.type === 'folder') {
+          response.status(400).json({ error: 'A folder doesn\'t have content' });
+          return;
+        }
+        fs.readFile(file.localPath, (err, data) => {
+          if (err) {
+            response.status(404).json({ error: 'Not found' });
+            return;
+          }
+          const fileType = mime.lookup(file.name);
+          if (fileType) {
+            response.setHeader('Content-Type', fileType);
+            response.writeHead(200);
+            response.write(data);
+            response.end();
+          }
+        });
+      }
+    } else {
+      response.status(404).json({ error: 'Not found' });
     }
   }
 }
