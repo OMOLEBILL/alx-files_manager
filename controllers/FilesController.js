@@ -291,8 +291,13 @@ export default class FilesController {
     const fileId = request.params.id;
     const fileQuery = { _id: new ObjectID(fileId) };
     const file = await files.findOne(fileQuery);
+    console.log('GET /files/:id/data with an unpublished file linked to :id and user authenticated and owner');
+    console.log(`file is ${file} and user is ${user}`);
+    console.log(file);
+    console.log(user);
     if (file !== null) {
       if (file.isPublic) {
+        console.log(`file is open source ${file.isPublic}`);
         if (file.type === 'folder') {
           response.status(400).json({ error: 'A folder doesn\'t have content' });
           return;
@@ -308,11 +313,18 @@ export default class FilesController {
             response.writeHead(200);
             response.write(data);
             response.end();
+          } else {
+            response.writeHead(200);
+            response.write(data);
+            response.end();
           }
         });
-      } else if (user == null) {
-        response.status(404).json({ error: 'Not found' });
       } else {
+        // deal with case when user is authenticated or not owner of file
+        if (!user || user._id.toString() !== file.userId.toString()) {
+          response.status(404).json({ error: 'Not found' });
+          return;
+        }
         if (file.type === 'folder') {
           response.status(400).json({ error: 'A folder doesn\'t have content' });
           return;
@@ -322,9 +334,15 @@ export default class FilesController {
             response.status(404).json({ error: 'Not found' });
             return;
           }
+          console.log(`we have the file data as ${data}`);
           const fileType = mime.lookup(file.name);
+          console.log(`filetype is ${fileType}`);
           if (fileType) {
             response.setHeader('Content-Type', fileType);
+            response.writeHead(200);
+            response.write(data);
+            response.end();
+          } else {
             response.writeHead(200);
             response.write(data);
             response.end();
